@@ -16,10 +16,9 @@ import java.util.*;
 @EnableAutoConfiguration
 public class MainController {
 
-  @RequestMapping("/")
-  @ResponseBody
+  @RequestMapping("/home")
   String home() {
-      return "Hello World!";
+      return "home";
   }
 
   @RequestMapping(value="/submit/", method = RequestMethod.POST)
@@ -115,9 +114,5 @@ public class MainController {
     String dbUrl = "jdbc:postgresql://" + dbUri.getHost() + dbUri.getPath();
 
     return DriverManager.getConnection(dbUrl, username, password);
-  }
-
-  public static void main(String[] args) throws Exception {
-      SpringApplication.run(MainController.class, args);
   }
 }
