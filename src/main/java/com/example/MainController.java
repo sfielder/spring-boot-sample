@@ -85,7 +85,7 @@ public class MainController {
       pstmt.setString(3, phone);
       pstmt.setString(4, firstName);
       pstmt.setString(5, lastName);
-      // pstmt.executeUpdate();
+      pstmt.executeUpdate();
   }
 
 
