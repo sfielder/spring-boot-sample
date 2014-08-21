@@ -80,11 +80,18 @@ public class MainController {
         String data = "to=" + URLEncoder.encode(phoneNumber, "UTF-8") +
           "&message=" + URLEncoder.encode("You have a new appt on " + date, "UTF-8");
 
-        // Disable cert validation
-        disableCertificateValidation();
-
         URL blowerIoUrl = new URL(blowerIoUrlStr + "messages");
-        HttpURLConnection con = (HttpURLConnection)blowerIoUrl.openConnection();
+        final String username = blowerIoUrl.getUserInfo().split(":")[0];
+        final String password = blowerIoUrl.getUserInfo().split(":")[1];
+
+        disableCertificateValidation();
+        Authenticator.setDefault (new Authenticator() {
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication (username, password.toCharArray());
+            }
+        });
+
+        HttpsURLConnection con = (HttpsURLConnection)blowerIoUrl.openConnection();
         con.setRequestMethod("POST");
         con.setDoOutput(true);
         con.getOutputStream().write(data.getBytes("UTF-8"));
@@ -99,6 +106,8 @@ public class MainController {
         String errMsg = "There was an SMS error: " + e.getMessage();
         e.printStackTrace();
       }
+    } else {
+      System.out.println("No BlowerIO URL set");
     }
   }
 
