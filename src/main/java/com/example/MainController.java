@@ -5,11 +5,12 @@ import org.springframework.boot.autoconfigure.*;
 import org.springframework.stereotype.*;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.io.*;
+import java.net.*;
 import java.sql.*;
 
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.*;
 
 @Controller
@@ -48,6 +49,10 @@ public class MainController {
 
       //Adding an extra method for Heroku Connect 'salesforce' schema
       createHerokuConnectAppointment(connection, inviteeFirstName, inviteeLastName, inviteeEmail, inviteePhone, apptDate);
+
+      if (sendSms) {
+        sendSms(inviteePhone, apptDate);
+      }
     } catch (Exception e) {
       String errMsg = "There was an error: " + e.getMessage();
       System.out.println(errMsg);
@@ -55,6 +60,33 @@ public class MainController {
     }
 
     return "ok";
+  }
+
+  private void sendSms(String phoneNumber, String date) {
+    String blowerIoUrlStr = System.getenv("BLOWERIO_URL");
+
+    if (null != blowerIoUrlStr) {
+      try {
+        String data = "to=" + URLEncoder.encode(phoneNumber, "UTF-8") +
+          "&message=" + URLEncoder.encode("You have an appt on " + date, "UTF-8");
+
+
+        URL blowerIoUrl = new URL(blowerIoUrlStr + "/messages");
+        HttpURLConnection con = (HttpURLConnection)blowerIoUrl.openConnection();
+        con.setRequestMethod("POST");
+        con.setDoOutput(true);
+        con.getOutputStream().write(data.getBytes("UTF-8"));
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
+
+        String tmp = "BLOWERIO Response:\n";
+        while((tmp = reader.readLine()) != null) {
+            System.out.println(tmp);
+        }
+      } catch (Exception e) {
+        String errMsg = "There was an SMS error: " + e.getMessage();
+      }
+    }
   }
 
   private Map<String,String> parseParams(String body) {
