@@ -131,11 +131,16 @@ public class MainController {
   private Connection getConnection() throws URISyntaxException, SQLException {
     URI dbUri = new URI(System.getenv("DATABASE_URL"));
 
-    String username = dbUri.getUserInfo().split(":")[0];
-    String password = dbUri.getUserInfo().split(":")[1];
     String dbUrl = "jdbc:postgresql://" + dbUri.getHost() + dbUri.getPath();
 
-    return DriverManager.getConnection(dbUrl, username, password);
+    if (null != dbUri.getUserInfo()) {
+      String username = dbUri.getUserInfo().split(":")[0];
+      String password = dbUri.getUserInfo().split(":")[1];
+      return DriverManager.getConnection(dbUrl, username, password);
+    } else {
+      return DriverManager.getConnection(dbUrl);
+    }
+
   }
 
 }
