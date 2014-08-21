@@ -13,6 +13,17 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.*;
 
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
 @Controller
 @EnableAutoConfiguration
 public class MainController {
@@ -54,9 +65,8 @@ public class MainController {
         sendSms(inviteePhone, apptDate);
       }
     } catch (Exception e) {
-      String errMsg = "There was an error: " + e.getMessage();
-      System.out.println(errMsg);
-      return errMsg;
+      e.printStackTrace();
+      return "There was an error: " + e.getMessage();
     }
 
     return "ok";
@@ -68,10 +78,12 @@ public class MainController {
     if (null != blowerIoUrlStr) {
       try {
         String data = "to=" + URLEncoder.encode(phoneNumber, "UTF-8") +
-          "&message=" + URLEncoder.encode("You have an appt on " + date, "UTF-8");
+          "&message=" + URLEncoder.encode("You have a new appt on " + date, "UTF-8");
 
+        // Disable cert validation
+        disableCertificateValidation();
 
-        URL blowerIoUrl = new URL(blowerIoUrlStr + "/messages");
+        URL blowerIoUrl = new URL(blowerIoUrlStr + "messages");
         HttpURLConnection con = (HttpURLConnection)blowerIoUrl.openConnection();
         con.setRequestMethod("POST");
         con.setDoOutput(true);
@@ -85,6 +97,7 @@ public class MainController {
         }
       } catch (Exception e) {
         String errMsg = "There was an SMS error: " + e.getMessage();
+        e.printStackTrace();
       }
     }
   }
@@ -164,5 +177,42 @@ public class MainController {
     String dbUrl = "jdbc:postgresql://" + dbUri.getHost() + dbUri.getPath();
 
     return DriverManager.getConnection(dbUrl, username, password);
+  }
+
+  public void disableCertificateValidation() {
+      // Create a trust manager that does not validate certificate chains
+      TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
+          public X509Certificate[] getAcceptedIssuers() {
+              return new X509Certificate[0];
+          }
+
+          @Override
+          public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+
+          }
+
+          @Override
+          public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+
+          }
+      }};
+
+      // Ignore differences between given hostname and certificate hostname
+      HostnameVerifier hv = new HostnameVerifier() {
+          @Override
+          public boolean verify(String hostname, SSLSession session) {
+              return true;
+          }
+      };
+
+      // Install the all-trusting trust manager
+      try {
+          SSLContext sc = SSLContext.getInstance("SSL");
+          sc.init(null, trustAllCerts, new SecureRandom());
+          HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+          HttpsURLConnection.setDefaultHostnameVerifier(hv);
+      } catch (Exception e) {
+          // Do nothing
+      }
   }
 }
