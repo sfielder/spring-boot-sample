@@ -51,7 +51,7 @@ public class MainController {
       createHerokuConnectAppointment(connection, inviteeFirstName, inviteeLastName, inviteeEmail, inviteePhone, apptDate);
 
       if (sendSms) {
-        (new SmsSender()).send(inviteePhone, "You have a new appointment on " + date);
+        (new SmsSender()).send(inviteePhone, "You have a new appointment on " + apptDate);
       }
     } catch (Exception e) {
       e.printStackTrace();
