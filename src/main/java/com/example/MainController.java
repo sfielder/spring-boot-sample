@@ -45,10 +45,13 @@ public class MainController {
 
       createInvitee(connection, inviteeName, inviteeEmail, inviteePhone);
       createAppointment(connection, inviteeEmail, apptDate, sendSms);
+
       //Adding an extra method for Heroku Connect 'salesforce' schema
       createHerokuConnectAppointment(connection, inviteeFirstName, inviteeLastName, inviteeEmail, inviteePhone, apptDate);
     } catch (Exception e) {
-      return "There was an error: " + e.getMessage();
+      String errMsg = "There was an error: " + e.getMessage();
+      System.out.println(errMsg);
+      return errMsg;
     }
 
     return "ok";
@@ -63,30 +66,26 @@ public class MainController {
       String[] parts = arg.split("=");
       String key = parts[0];
       String val = parts.length > 1 ? URLDecoder.decode(parts[1]) : null;
-      System.out.println(key + " => " + val);
       records.put(key, val);
     }
 
     return records;
   }
 
-//Added for Heroku Connect
+  //Added for Heroku Connect
   private void createHerokuConnectAppointment(Connection connection, String firstName, String lastName, String email, String phone, String date) throws SQLException {
-	   Statement stmt = connection.createStatement();
-	    PreparedStatement pstmt = connection.prepareStatement(
-	        "INSERT INTO salesforce.contact (appointment__c, email, phone, firstname, lastname) VALUES (?,?,?,?,?)");
-	    pstmt.setString(1, date);
-	    pstmt.setString(2, email);
-	    pstmt.setString(3, phone);
-	    pstmt.setString(4, firstName);
-	    pstmt.setString(5, lastName);
-	    pstmt.executeUpdate();
-	}
-  
+      PreparedStatement pstmt = connection.prepareStatement(
+          "INSERT INTO salesforce.contact (appointment__c, email, phone, firstname, lastname) VALUES (?,?,?,?,?)");
+      pstmt.setString(1, date);
+      pstmt.setString(2, email);
+      pstmt.setString(3, phone);
+      pstmt.setString(4, firstName);
+      pstmt.setString(5, lastName);
+      pstmt.executeUpdate();
+  }
+
 
   private void createAppointment(Connection connection, String inviteeId, String date, Boolean sendSms) throws SQLException {
-    System.out.println("creating new appt: " + date);
-    Statement stmt = connection.createStatement();
     PreparedStatement pstmt = connection.prepareStatement(
         "INSERT INTO appointments (invitee_id, date) VALUES (?,?)");
     pstmt.setString(1, inviteeId);
@@ -101,7 +100,6 @@ public class MainController {
     ResultSet rs = pstmt.executeQuery();
 
     if (!rs.next()) {
-      System.out.println("creating new invitee: " + email);
       pstmt = connection.prepareStatement(
           "INSERT INTO invitees (name, email, phone) VALUES (?,?,?)");
       pstmt.setString(1, name);
