@@ -109,17 +109,36 @@ public class MainController {
     ")");
   }
 
-  private Connection getConnection() throws URISyntaxException, SQLException {
-    URI dbUri = new URI(System.getenv("DATABASE_URL"));
+  private Connection getConnection() throws URISyntaxException, SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    
+    Class<?> driverClass = Class.forName("org.postgresql.Driver");
+    java.sql.Driver driver = (java.sql.Driver)driverClass.newInstance();
+    DriverManager.registerDriver(driver);
 
-    String dbUrl = "jdbc:postgresql://" + dbUri.getHost() + dbUri.getPath();
+    // we are in AWS land
+    if (System.getProperty("RDS_DB_NAME") != null) {
+      
+      String dbName = System.getProperty("RDS_DB_NAME"); 
+      String userName = System.getProperty("RDS_USERNAME"); 
+      String password = System.getProperty("RDS_PASSWORD"); 
+      String hostname = System.getProperty("RDS_HOSTNAME");
+      String port = System.getProperty("RDS_PORT");
 
-    if (null != dbUri.getUserInfo()) {
+      String jdbcUrl = "jdbc:postgresql://" + hostname + ":" + port + "/" + dbName;
+
+      return DriverManager.getConnection(jdbcUrl, userName, password);
+
+    // we are on heroku
+    } else {
+
+      URI dbUri = new URI(System.getenv("DATABASE_URL"));
+
       String username = dbUri.getUserInfo().split(":")[0];
       String password = dbUri.getUserInfo().split(":")[1];
+      String dbUrl = "jdbc:postgresql://" + dbUri.getHost() + dbUri.getPath();
+
       return DriverManager.getConnection(dbUrl, username, password);
-    } else {
-      return DriverManager.getConnection(dbUrl);
+
     }
 
   }
